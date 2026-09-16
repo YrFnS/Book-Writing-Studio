@@ -49,6 +49,18 @@ async function listModels(apiKey: string): Promise<string[]> {
   return models;
 }
 
+/**
+ * ListModels reports every model that accepts generateContent, which includes
+ * speech, image, music and robotics models. They are fine to offer in the
+ * picker but must never be picked automatically for prose.
+ */
+const NON_PROSE = /(^|-)(tts|image|lyria|transcribe|robotics|computer-use|embedding)(-|$)/;
+
+const proseModels = (models: string[]) => {
+  const prose = models.filter((m) => !NON_PROSE.test(m));
+  return prose.length > 0 ? prose : models;
+};
+
 const classify = (message: string) => ({
   isRateLimited:
     message.includes("429") || message.includes("quota") || message.includes("RESOURCE_EXHAUSTED"),
@@ -89,7 +101,7 @@ app.post("/api/gemini/test-key", async (req, res) => {
       },
     });
 
-    const [firstModel] = await listModels(keyToUse);
+    const [firstModel] = proseModels(await listModels(keyToUse));
 
     const response = await ai.models.generateContent({
       model: firstModel,
@@ -153,7 +165,7 @@ app.post("/api/gemini/generate", async (req, res) => {
   // fallbacks, so an overloaded or retired model still has somewhere to go.
   let available: string[] = [];
   try {
-    available = await listModels(keyToUse);
+    available = proseModels(await listModels(keyToUse));
   } catch (error: any) {
     if (!model) {
       const message = error?.message || "Could not read the model list from Google.";
@@ -194,6 +206,7 @@ app.post("/api/gemini/generate", async (req, res) => {
       if (text) {
         return res.json({ text, usedModel: currentModel });
       }
+      lastError = new Error(`${currentModel} returned an empty response.`);
     } catch (error: any) {
       lastError = error;
       console.warn(`Model ${currentModel} failed:`, error?.message);
