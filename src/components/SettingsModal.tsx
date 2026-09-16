@@ -814,7 +814,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </h4>
                   </div>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 font-bold">
-                    v2.5 Flash / Pro
+                    {preferences.aiModel || (language === 'ar' ? 'تلقائي' : 'Auto')}
                   </span>
                 </div>
 
@@ -825,9 +825,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={preferences.aiModel || 'gemini-2.5-flash'}
+                    value={preferences.aiModel || ''}
                     onChange={(e) => onUpdatePreferences({ ...preferences, aiModel: e.target.value as any })}
-                    placeholder="e.g. gemini-2.5-flash"
+                    placeholder={language === 'ar' ? 'اتركه فارغاً للاختيار التلقائي' : 'Leave empty to pick automatically'}
                     className="w-full bg-surface border border-subtle rounded-lg px-3 py-2 text-xs text-main font-mono focus:outline-none"
                   />
                   <p className="text-[10px] text-dim">

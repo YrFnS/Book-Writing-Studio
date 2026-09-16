@@ -134,7 +134,8 @@ export interface UserPreferences {
   defaultDirection: 'auto' | 'rtl' | 'ltr';
   writingGoal: WritingGoal;
   // Extended customization
-  aiModel?: 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-2.0-flash';
+  /** A model id fetched live from the user's key; empty means let the server pick. */
+  aiModel?: string;
   aiTemperature?: number; // 0.2 to 1.0 (default 0.7)
   aiLanguagePreference?: 'auto' | 'ar' | 'en';
   globalAiPersona?: string; // Global default system instructions

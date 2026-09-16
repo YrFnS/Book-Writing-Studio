@@ -254,7 +254,7 @@ Provide an insightful, helpful, and specific response directly referencing the b
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction,
-    model: modelOverride || 'gemini-3.8-flash',
+    model: modelOverride,
     temperature: temperatureOverride ?? 0.7,
   });
 
@@ -286,7 +286,7 @@ Generate the exact prose ready to be inserted directly into the chapter. Do not 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction,
-    model: modelOverride || 'gemini-3.8-flash',
+    model: modelOverride,
     temperature: temperatureOverride ?? 0.8,
   });
 
@@ -595,7 +595,6 @@ Return ONLY valid JSON.`;
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction,
-    model: 'gemini-3.8-flash',
     temperature: options.temperature ?? 0.75,
   });
 
@@ -662,7 +661,6 @@ Be warm, intelligent, and insightful. Return ONLY the question.`;
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction: 'You are an acclaimed biographer and interviewer helping authors write their memoirs and personal books.',
-    model: 'gemini-3.8-flash',
     temperature: 0.8,
   });
 
@@ -711,7 +709,6 @@ Return ONLY the polished manuscript text ready for the book.`;
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction: buildBookContextPrompt(book, activeChapter),
-    model: 'gemini-3.8-flash',
     temperature: 0.7,
   });
 
