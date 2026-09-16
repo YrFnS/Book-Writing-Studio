@@ -984,6 +984,7 @@ export function App() {
               onChangeEditorMaxWidth={(width) => handleUpdatePreferences({ ...preferences, editorMaxWidth: width })}
               language={preferences.appLanguage}
               apiKeys={apiKeys}
+          aiModel={preferences.aiModel}
               onUpdateKeyStatus={handleUpdateKeyStatus}
               isZenMode={isZenMode}
               onToggleZenMode={() => setIsZenMode((prev) => !prev)}
@@ -1025,6 +1026,7 @@ export function App() {
           onDeleteEntry={handleDeleteCodexEntry}
           language={preferences.appLanguage}
           apiKeys={apiKeys}
+          aiModel={preferences.aiModel}
           onUpdateKeyStatus={handleUpdateKeyStatus}
         />
       )}
@@ -1045,6 +1047,7 @@ export function App() {
           }}
           language={preferences.appLanguage}
           apiKeys={apiKeys}
+          aiModel={preferences.aiModel}
           onUpdateKeyStatus={handleUpdateKeyStatus}
           onOpenTalkAndWrite={() => setIsTalkAndWriteOpen(true)}
         />
@@ -1066,6 +1069,7 @@ export function App() {
           }}
           onNewChapterFromSpeech={handleNewChapterFromSpeech}
           language={preferences.appLanguage}
+          aiModel={preferences.aiModel}
           apiKeys={apiKeys}
           onUpdateKeyStatus={handleUpdateKeyStatus}
         />

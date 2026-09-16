@@ -297,7 +297,8 @@ export async function translateAndType(
   keys: ApiKeyItem[],
   updateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void,
   text: string,
-  targetLang: 'ar' | 'en'
+  targetLang: 'ar' | 'en',
+  modelOverride?: string
 ): Promise<string> {
   const prompt = targetLang === 'ar'
     ? `Translate the following English passage into literary, eloquent Arabic prose (لغة عربية أدبية فصيحة وبليغة). Ensure the cadence, emotional depth, and metaphors are preserved for book reading:
@@ -313,6 +314,7 @@ Return ONLY the translated English prose.`;
 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
+    model: modelOverride,
     systemInstruction: 'You are an award-winning literary translator specializing in Arabic and English novels.',
     temperature: 0.4,
   });
@@ -324,7 +326,8 @@ export async function cleanUpVoiceSpeech(
   keys: ApiKeyItem[],
   updateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void,
   rawTranscript: string,
-  language: string
+  language: string,
+  modelOverride?: string
 ): Promise<string> {
   const isArabic = language.startsWith('ar');
   const prompt = isArabic
@@ -345,6 +348,7 @@ Format this into clean, properly punctuated literary prose with natural paragrap
 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
+    model: modelOverride,
     systemInstruction: 'You are an expert editorial proofreader and voice-to-prose formatter.',
     temperature: 0.3,
   });
@@ -356,7 +360,8 @@ export async function adjustTone(
   keys: ApiKeyItem[],
   updateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void,
   text: string,
-  toneKey: 'poetic' | 'dramatic' | 'descriptive' | 'classicalArabic' | 'concise'
+  toneKey: 'poetic' | 'dramatic' | 'descriptive' | 'classicalArabic' | 'concise',
+  modelOverride?: string
 ): Promise<string> {
   const prompt = `Rewrite the following passage in the requested tone (${toneKey}):
 """
@@ -373,6 +378,7 @@ Return ONLY the rewritten prose.`;
 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
+    model: modelOverride,
     temperature: 0.7,
   });
 
@@ -382,7 +388,8 @@ Return ONLY the rewritten prose.`;
 export async function enhanceArabicPunctuationAndTashkeel(
   keys: ApiKeyItem[],
   updateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void,
-  text: string
+  text: string,
+  modelOverride?: string
 ): Promise<string> {
   const prompt = `أنت خبير تدقيق لغوي وطباعي للروايات العربية. قم بمراجعة النص التالي وتطبيق المعايير الأدبية التالية:
 1. ضبط وتصحيح علامات الترقيم العربية السليمة (الفواصل العربية "،"، علامات الاستفهام "؟"، النقاط، وتنسيق الحوار بعلامات التنصيص المزدوجة « » أو الشرطات الطويلة —).
@@ -399,6 +406,7 @@ ${text}
 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
+    model: modelOverride,
     systemInstruction: 'أنت محرر أدبي رفيع المستوى مختص بنشر الروايات والمؤلفات الأدبية الفاخرة.',
     temperature: 0.2,
   });
@@ -410,7 +418,8 @@ export async function suggestSynonymsAndRhetoric(
   keys: ApiKeyItem[],
   updateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void,
   text: string,
-  language: string
+  language: string,
+  modelOverride?: string
 ): Promise<string> {
   const isArabic = language.startsWith('ar') || /[\u0600-\u06FF]/.test(text);
   const prompt = isArabic
@@ -427,6 +436,7 @@ Present them in a clean, concise bulleted list suitable for high-caliber literar
 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
+    model: modelOverride,
     systemInstruction: 'You are a master literary stylist and novelist advising an author on diction and wordcraft.',
     temperature: 0.7,
   });
@@ -444,7 +454,8 @@ export async function generateCodexEntryDetails(
     genre?: string;
     description?: string;
     primaryLanguage: string;
-  }
+  },
+  modelOverride?: string
 ): Promise<{ description: string; aliases?: string; notes?: string }> {
   const isAr = bookContext.primaryLanguage === 'ar' || /[\u0600-\u06FF]/.test(name);
   const prompt = isAr
@@ -477,6 +488,7 @@ Return ONLY valid JSON.`;
 
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
+    model: modelOverride,
     systemInstruction: 'You generate structured literary worldbuilding and character profile data in clean JSON.',
     temperature: 0.8,
   });
@@ -519,6 +531,7 @@ export async function talkAndWriteProse(
     activePage?: Page;
     globalPersona?: string;
     temperature?: number;
+    model?: string;
   } = {}
 ): Promise<TalkAndWriteResult> {
   const systemInstruction = buildBookContextPrompt(
@@ -595,6 +608,7 @@ Return ONLY valid JSON.`;
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction,
+    model: options.model,
     temperature: options.temperature ?? 0.75,
   });
 
@@ -623,7 +637,8 @@ export async function getNextInterviewQuestion(
   book: Book,
   conversationHistory: { role: 'author' | 'interviewer'; text: string }[],
   activeChapter?: Chapter,
-  targetLang: 'ar' | 'en' = 'ar'
+  targetLang: 'ar' | 'en' = 'ar',
+  modelOverride?: string
 ): Promise<string> {
   const isAr = targetLang === 'ar' || book.primaryLanguage === 'ar';
   const historyText = conversationHistory
@@ -661,6 +676,7 @@ Be warm, intelligent, and insightful. Return ONLY the question.`;
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction: 'You are an acclaimed biographer and interviewer helping authors write their memoirs and personal books.',
+    model: modelOverride,
     temperature: 0.8,
   });
 
@@ -676,7 +692,8 @@ export async function compileInterviewToChapter(
   book: Book,
   conversationHistory: { role: 'author' | 'interviewer'; text: string }[],
   activeChapter?: Chapter,
-  targetLang: 'ar' | 'en' = 'ar'
+  targetLang: 'ar' | 'en' = 'ar',
+  modelOverride?: string
 ): Promise<string> {
   const isAr = targetLang === 'ar' || book.primaryLanguage === 'ar';
   const authorStatements = conversationHistory
@@ -709,6 +726,7 @@ Return ONLY the polished manuscript text ready for the book.`;
   const result = await executeWithKeyRotation(keys, updateKeyStatus, {
     prompt,
     systemInstruction: buildBookContextPrompt(book, activeChapter),
+    model: modelOverride,
     temperature: 0.7,
   });
 

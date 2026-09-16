@@ -68,6 +68,9 @@ interface EditorProps {
   onChangeEditorMaxWidth?: (width: 'prose' | 'wide' | 'full') => void;
   language: AppLanguage;
   apiKeys: ApiKeyItem[];
+  /** The author's chosen model id; empty lets the server pick. */
+  aiModel?: string;
+
   onUpdateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void;
   isZenMode: boolean;
   onToggleZenMode: () => void;
@@ -89,6 +92,7 @@ export const Editor: React.FC<EditorProps> = ({
   onChangeEditorMaxWidth,
   language,
   apiKeys,
+  aiModel,
   onUpdateKeyStatus,
   isZenMode,
   onToggleZenMode,
@@ -406,7 +410,8 @@ export const Editor: React.FC<EditorProps> = ({
         apiKeys,
         onUpdateKeyStatus,
         transcript,
-        speechLang
+        speechLang,
+        aiModel
       );
       handleInsertTranscript(cleaned);
     } catch (err: any) {
@@ -427,7 +432,8 @@ export const Editor: React.FC<EditorProps> = ({
         apiKeys,
         onUpdateKeyStatus,
         transcript,
-        targetLang
+        targetLang,
+        aiModel
       );
       handleInsertTranscript(translated);
     } catch (err: any) {
@@ -490,7 +496,9 @@ export const Editor: React.FC<EditorProps> = ({
         aiPromptInput.trim(),
         aiTargetLang,
         chapter || undefined,
-        page || undefined
+        page || undefined,
+        undefined,
+        aiModel
       );
 
       handleInsertTranscript(generatedText);
@@ -516,7 +524,8 @@ export const Editor: React.FC<EditorProps> = ({
         apiKeys,
         onUpdateKeyStatus,
         selected,
-        selectedTone
+        selectedTone,
+        aiModel
       );
 
       const textarea = textareaRef.current;
@@ -551,7 +560,8 @@ export const Editor: React.FC<EditorProps> = ({
       const refined = await enhanceArabicPunctuationAndTashkeel(
         apiKeys,
         onUpdateKeyStatus,
-        selected
+        selected,
+        aiModel
       );
 
       const textarea = textareaRef.current;
@@ -586,7 +596,8 @@ export const Editor: React.FC<EditorProps> = ({
         apiKeys,
         onUpdateKeyStatus,
         selected,
-        language
+        language,
+        aiModel
       );
       setSynonymsResult(suggestions);
       setShowSynonymsModal(true);

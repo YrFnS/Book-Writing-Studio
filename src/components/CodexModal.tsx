@@ -27,6 +27,8 @@ interface CodexModalProps {
   onDeleteEntry: (entryId: string) => void;
   language: AppLanguage;
   apiKeys?: ApiKeyItem[];
+  /** The author's chosen model id; empty lets the server pick. */
+  aiModel?: string;
   onUpdateKeyStatus?: (keyId: string, status: ApiKeyItem['status'], error?: string) => void;
 }
 
@@ -39,6 +41,7 @@ export const CodexModal: React.FC<CodexModalProps> = ({
   onDeleteEntry,
   language,
   apiKeys = [],
+  aiModel,
   onUpdateKeyStatus = () => {},
 }) => {
   const t = useI18n(language);
@@ -71,7 +74,8 @@ export const CodexModal: React.FC<CodexModalProps> = ({
           genre: book.genre,
           description: book.description,
           primaryLanguage: book.primaryLanguage,
-        }
+        },
+        aiModel
       );
       if (result.description) setDescription(result.description);
       if (result.aliases && !aliases) setAliases(result.aliases);

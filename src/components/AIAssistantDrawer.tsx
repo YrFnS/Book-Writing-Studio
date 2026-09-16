@@ -29,6 +29,9 @@ interface AIAssistantDrawerProps {
   onInsertToPage: (text: string) => void;
   language: AppLanguage;
   apiKeys: ApiKeyItem[];
+  /** The author's chosen model id; empty lets the server pick. */
+  aiModel?: string;
+
   onUpdateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void;
   onOpenTalkAndWrite?: () => void;
 }
@@ -49,6 +52,7 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
   onInsertToPage,
   language,
   apiKeys,
+  aiModel,
   onUpdateKeyStatus,
   onOpenTalkAndWrite,
 }) => {
@@ -211,7 +215,9 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
         book,
         userPrompt,
         activeChapter || undefined,
-        activePage || undefined
+        activePage || undefined,
+        undefined,
+        aiModel
       );
 
       const assistantMsg: Message = {

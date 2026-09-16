@@ -45,6 +45,8 @@ interface TalkAndWriteModalProps {
   onInsertToPage: (text: string, mode: 'cursor' | 'append' | 'replace') => void;
   onCreateNewPageWithContent: (title: string, content: string) => void;
   language: AppLanguage;
+  /** The author's chosen model id; empty lets the server pick. */
+  aiModel?: string;
   apiKeys: ApiKeyItem[];
   onUpdateKeyStatus: (keyId: string, status: ApiKeyItem['status'], error?: string) => void;
 }
@@ -55,6 +57,7 @@ export const TalkAndWriteModal: React.FC<TalkAndWriteModalProps> = ({
   isOpen,
   onClose,
   book,
+  aiModel,
   activeChapter,
   activePage,
   onInsertToPage,
@@ -189,6 +192,7 @@ export const TalkAndWriteModal: React.FC<TalkAndWriteModalProps> = ({
           writingStyle: activeMode === 'principles' ? 'principles' : writingStyle,
           activeChapter: activeChapter || undefined,
           activePage: activePage || undefined,
+          model: aiModel,
         }
       );
       setResult(generated);
@@ -210,7 +214,8 @@ export const TalkAndWriteModal: React.FC<TalkAndWriteModalProps> = ({
         book,
         interviewHistory,
         activeChapter || undefined,
-        isAr ? 'ar' : 'en'
+        isAr ? 'ar' : 'en',
+        aiModel
       );
 
       setInterviewHistory((prev) => [
@@ -246,7 +251,8 @@ export const TalkAndWriteModal: React.FC<TalkAndWriteModalProps> = ({
         book,
         interviewHistory,
         activeChapter || undefined,
-        isAr ? 'ar' : 'en'
+        isAr ? 'ar' : 'en',
+        aiModel
       );
       setResult({
         title: isAr ? 'خلاصة وتأملات الحوار' : 'Interview Synthesis & Reflections',
