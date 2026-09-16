@@ -43,6 +43,7 @@ import {
   downloadLibraryFromDrive,
   getCachedToken,
 } from '../lib/googleDrive';
+import { DriveSetupGuide } from './DriveSetupGuide';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -261,16 +262,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [isDrivePulling, setIsDrivePulling] = useState(false);
   const [driveStatusMsg, setDriveStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  const handleConnectDrive = async () => {
+  const handleConnectDrive = async (silent = false) => {
     setIsDriveConnecting(true);
     setDriveStatusMsg(null);
     try {
-      const { user, accessToken } = await signInWithGoogleDrive();
+      const { user, accessToken } = await signInWithGoogleDrive(driveConfig.clientId || '', silent);
       const updatedConfig: GoogleDriveConfig = {
         ...driveConfig,
         connected: true,
         autoBackupEnabled: true,
-        userEmail: user.email || '',
+        userEmail: user.email || driveConfig.userEmail || '',
         accessToken,
         lastSyncTime: Date.now(),
       };
@@ -311,12 +312,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  const handlePushToDrive = async () => {
+  /**
+   * Drive access tokens last about an hour and the browser flow has no refresh
+   * token, so renew silently first and only fall back to the popup.
+   */
+  const resolveDriveToken = async (): Promise<string | null> => {
     const token = getCachedToken() || driveConfig.accessToken;
-    if (!token) {
-      await handleConnectDrive();
-      return;
+    if (token) return token;
+
+    if (driveConfig.connected && driveConfig.clientId) {
+      try {
+        const { accessToken } = await signInWithGoogleDrive(driveConfig.clientId, true);
+        onUpdateDriveConfig({ ...driveConfig, accessToken });
+        return accessToken;
+      } catch {
+        // Silent renewal fails when consent lapsed; fall through to the popup.
+      }
     }
+
+    await handleConnectDrive();
+    return null;
+  };
+
+  const handlePushToDrive = async () => {
+    const token = await resolveDriveToken();
+    if (!token) return;
 
     setIsDrivePushing(true);
     setDriveStatusMsg(null);
@@ -358,11 +378,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handlePullFromDrive = async () => {
-    const token = getCachedToken() || driveConfig.accessToken;
-    if (!token) {
-      await handleConnectDrive();
-      return;
-    }
+    const token = await resolveDriveToken();
+    if (!token) return;
 
     setIsDrivePulling(true);
     setDriveStatusMsg(null);
@@ -1264,43 +1281,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
 
                 {!driveConfig.connected ? (
-                  /* Not Connected State: One-Click Google Connect Button */
-                  <div className="p-5 rounded-xl bg-surface border border-subtle flex flex-col items-center justify-center text-center gap-4">
-                    <div className="max-w-md space-y-1.5">
-                      <p className="text-xs font-medium text-main">
-                        {language === 'ar'
-                          ? 'بنقرة زر واحدة، يمكنك ربط Google Drive لحفظ فصولك تلقائياً في مجلد خاص (InkWeaver Studio).'
-                          : 'Connect your Google Drive with a single click for automatic background backup and two-way sync.'}
-                      </p>
-                      <p className="text-[11px] text-sub leading-relaxed">
-                        {language === 'ar'
-                          ? 'يتم طلب إذن قراءة وكتابة ملفات التطبيق فقط (drive.file) دون الوصول إلى أي ملفات شخصية أخرى.'
-                          : 'Only requests permission for app-created files (drive.file). Your other Drive files remain completely private.'}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleConnectDrive}
-                      disabled={isDriveConnecting}
-                      className="inline-flex items-center justify-center gap-3 px-6 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-800 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-xs transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
-                    >
-                      {isDriveConnecting ? (
-                        <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
-                      ) : (
-                        <svg className="w-4 h-4" viewBox="0 0 48 48">
-                          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-                          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-                        </svg>
-                      )}
-                      <span>
-                        {isDriveConnecting
-                          ? (language === 'ar' ? 'جارٍ الاتصال...' : 'Connecting...')
-                          : (language === 'ar' ? 'تسجيل الدخول وربط Google Drive' : 'Sign in with Google & Connect Drive')}
-                      </span>
-                    </button>
-                  </div>
+                  /* Not connected: the user brings their own Google Client ID. */
+                  <DriveSetupGuide
+                    language={language}
+                    clientId={driveConfig.clientId || ''}
+                    onChangeClientId={(clientId) => onUpdateDriveConfig({ ...driveConfig, clientId })}
+                    onConnect={() => handleConnectDrive()}
+                    isConnecting={isDriveConnecting}
+                  />
                 ) : (
                   /* Connected State: Two-Way Sync Controls */
                   <div className="space-y-4">

@@ -20,7 +20,7 @@ import { setKeyFailoverListener } from './lib/gemini';
 import { calculateTextStats } from './lib/speech';
 import { useI18n } from './lib/i18n';
 import { BookOpen, Plus } from 'lucide-react';
-import { initDriveAuth, uploadLibraryToDrive, getCachedToken } from './lib/googleDrive';
+import { uploadLibraryToDrive, getCachedToken } from './lib/googleDrive';
 
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -59,23 +59,6 @@ export function App() {
   });
   const [driveSyncState, setDriveSyncState] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
 
-  // Monitor Google Drive session
-  useEffect(() => {
-    const unsub = initDriveAuth(
-      (user, token) => {
-        setDriveConfig((prev) => ({
-          ...prev,
-          connected: true,
-          userEmail: user.email || prev.userEmail,
-          accessToken: token,
-        }));
-      },
-      () => {
-        // Auth cleared
-      }
-    );
-    return () => unsub();
-  }, []);
   const [preferences, setPreferences] = useState<UserPreferences>({
     theme: 'papyrus',
     appLanguage: 'ar',

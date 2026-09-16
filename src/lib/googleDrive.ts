@@ -1,29 +1,64 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  User,
-  signOut,
-} from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
 import { Book, UserPreferences } from '../types';
 
-// Initialize Firebase App singleton
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Google Drive access uses Google Identity Services directly, so the only
+// thing a deployment needs is an OAuth Client ID the user creates in their own
+// Google Cloud project. No Firebase project, no API key, no client secret.
 
 const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email';
+const GIS_SRC = 'https://accounts.google.com/gsi/client';
 
-const provider = new GoogleAuthProvider();
-provider.addScope(DRIVE_FILE_SCOPE);
-provider.setCustomParameters({
-  prompt: 'consent',
-});
+interface TokenResponse {
+  access_token?: string;
+  error?: string;
+  error_description?: string;
+}
+
+interface TokenClient {
+  requestAccessToken: (overrides?: { prompt?: string }) => void;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            prompt?: string;
+            callback: (response: TokenResponse) => void;
+            error_callback?: (error: { type?: string; message?: string }) => void;
+          }) => TokenClient;
+          revoke: (token: string, done?: () => void) => void;
+        };
+      };
+    };
+  }
+}
+
+let gisLoader: Promise<void> | null = null;
+
+const loadGis = (): Promise<void> => {
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
+  if (gisLoader) return gisLoader;
+
+  gisLoader = new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = GIS_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      gisLoader = null;
+      reject(new Error('Could not load Google sign-in. Check your internet connection.'));
+    };
+    document.head.appendChild(script);
+  });
+  return gisLoader;
+};
 
 let cachedAccessToken: string | null = null;
-let isSigningIn = false;
 
 export const getCachedToken = (): string | null => cachedAccessToken;
 
@@ -31,50 +66,77 @@ export const setCachedToken = (token: string | null) => {
   cachedAccessToken = token;
 };
 
-// Listen for auth state changes
-export const initDriveAuth = (
-  onAuthSuccess?: (user: User, token: string) => void,
-  onAuthFailure?: () => void
-) => {
-  return onAuthStateChanged(auth, async (user: User | null) => {
-    if (user && cachedAccessToken) {
-      onAuthSuccess?.(user, cachedAccessToken);
-    } else if (!isSigningIn) {
-      cachedAccessToken = null;
-      onAuthFailure?.();
-    }
+/** The origin the user must whitelist on their own OAuth client. */
+export const getRequiredOrigin = (): string => window.location.origin;
+
+/**
+ * Google returns an opaque "invalid_client"-style failure when the Client ID
+ * is malformed, so catch the obvious shape problem before opening a popup.
+ */
+export const isLikelyClientId = (value: string): boolean =>
+  /^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(value.trim());
+
+const requestToken = (clientId: string, prompt: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const client = window.google!.accounts.oauth2.initTokenClient({
+      client_id: clientId.trim(),
+      scope: `${DRIVE_FILE_SCOPE} ${EMAIL_SCOPE}`,
+      callback: (response) => {
+        if (response.access_token) resolve(response.access_token);
+        else reject(new Error(response.error_description || response.error || 'Google did not return access.'));
+      },
+      error_callback: (error) => {
+        reject(new Error(error.message || error.type || 'Google sign-in was cancelled.'));
+      },
+    });
+    client.requestAccessToken({ prompt });
   });
-};
 
-// Sign in with Google Popup
-export const signInWithGoogleDrive = async (): Promise<{
-  user: User;
-  accessToken: string;
-}> => {
+const fetchUserEmail = async (token: string): Promise<string> => {
   try {
-    isSigningIn = true;
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const token = credential?.accessToken;
-
-    if (!token) {
-      throw new Error('Failed to retrieve access token from Google sign in');
-    }
-
-    cachedAccessToken = token;
-    return {
-      user: result.user,
-      accessToken: token,
-    };
-  } finally {
-    isSigningIn = false;
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return '';
+    const data = await res.json();
+    return data.email || '';
+  } catch {
+    return '';
   }
 };
 
-// Sign out
+/**
+ * Opens Google's account chooser and returns a Drive access token.
+ * Pass silent=true to renew an expired token without a popup, which only
+ * works once the user has already granted consent on this browser.
+ */
+export const signInWithGoogleDrive = async (
+  clientId: string,
+  silent = false
+): Promise<{ user: { email: string }; accessToken: string }> => {
+  if (!clientId?.trim()) {
+    throw new Error('Add your Google Client ID first — see the setup steps below.');
+  }
+  if (!isLikelyClientId(clientId)) {
+    throw new Error('That does not look like a Client ID. It should end in .apps.googleusercontent.com');
+  }
+
+  await loadGis();
+  const accessToken = await requestToken(clientId, silent ? '' : 'consent');
+  cachedAccessToken = accessToken;
+  return { user: { email: await fetchUserEmail(accessToken) }, accessToken };
+};
+
 export const signOutGoogleDrive = async (): Promise<void> => {
-  await signOut(auth);
+  const token = cachedAccessToken;
   cachedAccessToken = null;
+  if (!token) return;
+  try {
+    await loadGis();
+    window.google?.accounts.oauth2.revoke(token);
+  } catch {
+    // Dropping the cached token is enough; revocation is a courtesy.
+  }
 };
 
 // --- Google Drive API Operations ---
