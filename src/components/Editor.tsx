@@ -162,6 +162,9 @@ export const Editor: React.FC<EditorProps> = ({
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notesInput, setNotesInput] = useState(page?.notes || '');
 
+  // Detailed Stats Analytics Modal
+  const [showStatsModal, setShowStatsModal] = useState(false);
+
   // In-app Toast message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -1155,9 +1158,13 @@ export const Editor: React.FC<EditorProps> = ({
       {!isZenMode && (
         <footer className="no-print border-t border-subtle bg-surface/80 backdrop-blur-xs px-4 sm:px-8 py-2 flex items-center justify-between text-xs text-sub select-none">
           <div className="flex items-center gap-3 sm:gap-5 font-mono">
-            <span>
+            <button
+              onClick={() => setShowStatsModal(true)}
+              className="hover:text-indigo-600 transition-colors flex items-center gap-1 cursor-pointer"
+              title={language === 'ar' ? 'انقر لعرض إحصائيات النص المفصلة' : 'Click for detailed text statistics'}
+            >
               <strong className="text-main">{stats.words.toLocaleString()}</strong> {t.words}
-            </span>
+            </button>
             <span className="hidden sm:inline">
               <strong className="text-main">{stats.characters.toLocaleString()}</strong> {t.chars}
             </span>
@@ -1187,6 +1194,73 @@ export const Editor: React.FC<EditorProps> = ({
             )}
           </div>
         </footer>
+      )}
+
+      {/* Modal: Detailed Manuscript Statistics & Analytics */}
+      {showStatsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-surface border border-subtle rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-subtle pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📊</span>
+                <h3 className="text-sm font-bold text-main">
+                  {language === 'ar' ? 'إحصائيات وتحليلات النص' : 'Manuscript Analytics & Statistics'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowStatsModal(false)}
+                className="text-sub hover:text-main text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 font-mono">
+              <div className="bg-canvas border border-subtle rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-main">{stats.words.toLocaleString()}</div>
+                <div className="text-[11px] text-dim uppercase mt-1">{t.words}</div>
+              </div>
+              <div className="bg-canvas border border-subtle rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-main">{stats.characters.toLocaleString()}</div>
+                <div className="text-[11px] text-dim uppercase mt-1">{t.chars}</div>
+              </div>
+              <div className="bg-canvas border border-subtle rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-main">{stats.readingTimeMinutes} min</div>
+                <div className="text-[11px] text-dim uppercase mt-1">{t.readingTime}</div>
+              </div>
+              <div className="bg-canvas border border-subtle rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-main">
+                  {content.split(/\n\n+/).filter(Boolean).length}
+                </div>
+                <div className="text-[11px] text-dim uppercase mt-1">
+                  {language === 'ar' ? 'فقرات' : 'Paragraphs'}
+                </div>
+              </div>
+            </div>
+
+            {stats.words > 0 && (
+              <div className="space-y-2 bg-canvas border border-subtle rounded-xl p-3">
+                <div className="flex items-center justify-between text-xs text-sub">
+                  <span>{language === 'ar' ? 'توازن اللغات (عربي / إنجليزي)' : 'Language Balance (Arabic / English)'}</span>
+                  <span className="font-mono font-bold text-main">{stats.arabicPercentage}% Ar</span>
+                </div>
+                <div className="w-full h-2 bg-elevated rounded-full overflow-hidden flex">
+                  <div className="bg-indigo-600 h-full transition-all" style={{ width: `${stats.arabicPercentage}%` }} />
+                  <div className="bg-emerald-500 h-full transition-all" style={{ width: `${100 - stats.arabicPercentage}%` }} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end pt-2 border-t border-subtle">
+              <button
+                onClick={() => setShowStatsModal(false)}
+                className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all"
+              >
+                {language === 'ar' ? 'إغلاق' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Floating Zen Focus HUD (when in Zen Mode) */}
