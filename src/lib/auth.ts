@@ -1,74 +1,49 @@
-// Client-side authentication storage and verification helper
-export interface AuthorAuth {
-  username: string;
-  passHash: string; // simple hash or stored secret
-  isConfigured: boolean;
+// Studio lock. Credentials live in the deployment's env vars and are verified
+// server-side; the browser only ever holds an HttpOnly session cookie.
+
+export interface SessionState {
+  /** False when the deployment has no credentials set — studio stays open. */
+  configured: boolean;
+  authenticated: boolean;
 }
 
-const AUTH_STORAGE_KEY = 'novel_studio_author_auth';
-const LOCK_STATE_KEY = 'novel_studio_locked';
-
-export function getEnvAuth() {
-  const env = (import.meta as any).env;
-  const envUser = env?.VITE_AUTH_USERNAME;
-  const envPass = env?.VITE_AUTH_PASSWORD;
-  if (envUser && envPass) {
-    return { username: envUser, passHash: envPass, isConfigured: true, isEnvLocked: true };
-  }
-  return null;
-}
-
-export function getStoredAuth(): AuthorAuth {
-  const env = getEnvAuth();
-  if (env) return env;
-
+export async function fetchSession(): Promise<SessionState> {
   try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (raw) {
-      return JSON.parse(raw);
+    const res = await fetch('/api/session', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error(String(res.status));
+    return await res.json();
+  } catch {
+    // ponytail: an unreachable API means we cannot prove the studio is open,
+    // so lock it rather than fail open.
+    return { configured: true, authenticated: false };
+  }
+}
+
+export async function login(
+  username: string,
+  password: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || 'Invalid username or password.' };
     }
-  } catch (e) {
-    console.error('Error reading auth', e);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Could not reach the server. Check your connection.' };
   }
-  return {
-    username: 'author',
-    passHash: 'writer2026',
-    isConfigured: false,
-  };
 }
 
-export function saveAuth(username: string, pass: string): void {
-  const env = getEnvAuth();
-  if (env) return; // Cannot override env auth in client if set via deployment env
-
-  const auth: AuthorAuth = {
-    username: username.trim() || 'author',
-    passHash: pass,
-    isConfigured: true,
-  };
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
-  localStorage.removeItem(LOCK_STATE_KEY);
-}
-
-export function verifyCredentials(username: string, pass: string): boolean {
-  const auth = getStoredAuth();
-  return auth.username.toLowerCase() === username.toLowerCase().trim() && auth.passHash === pass;
-}
-
-export function isStudioLocked(): boolean {
-  const env = getEnvAuth();
-  if (env) {
-    return localStorage.getItem(LOCK_STATE_KEY) !== 'false'; // Locked by default if env auth is set
+export async function logout(): Promise<void> {
+  try {
+    await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+  } catch {
+    // Clearing the cookie is best-effort; the lock screen shows either way.
   }
-  const auth = getStoredAuth();
-  if (!auth.isConfigured) return true; // Require auth/setup on first load
-  return localStorage.getItem(LOCK_STATE_KEY) === 'true';
-}
-
-export function lockStudio(): void {
-  localStorage.setItem(LOCK_STATE_KEY, 'true');
-}
-
-export function unlockStudio(): void {
-  localStorage.removeItem(LOCK_STATE_KEY);
 }

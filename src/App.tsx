@@ -35,11 +35,19 @@ import { CorkboardView } from './components/CorkboardView';
 import { ManuscriptStatsModal } from './components/ManuscriptStatsModal';
 import { AuthModal } from './components/AuthModal';
 import { TalkAndWriteModal } from './components/TalkAndWriteModal';
-import { isStudioLocked, lockStudio, unlockStudio } from './lib/auth';
+import { fetchSession, logout } from './lib/auth';
 
 export function App() {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isLocked, setIsLocked] = useState(isStudioLocked());
+  // null while the session check is in flight, so the studio never flashes
+  // its contents before the lock screen resolves.
+  const [isLocked, setIsLocked] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetchSession().then(({ configured, authenticated }) =>
+      setIsLocked(configured && !authenticated)
+    );
+  }, []);
   const [books, setBooks] = useState<Book[]>([]);
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
@@ -877,13 +885,10 @@ export function App() {
   return (
     <div className="h-screen bg-canvas text-main flex flex-col font-sans-ui transition-colors duration-200 overflow-hidden">
       {/* Secure Auth Lock Screen */}
-      {isLocked && (
+      {isLocked !== false && (
         <AuthModal
           language={preferences.appLanguage}
-          onSuccess={() => {
-            unlockStudio();
-            setIsLocked(false);
-          }}
+          onSuccess={() => setIsLocked(false)}
         />
       )}
 
@@ -926,7 +931,7 @@ export function App() {
         viewMode={viewMode}
         onToggleViewMode={() => setViewMode(prev => prev === 'editor' ? 'corkboard' : 'editor')}
         onLockStudio={() => {
-          lockStudio();
+          void logout();
           setIsLocked(true);
         }}
       />

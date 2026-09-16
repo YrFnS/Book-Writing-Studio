@@ -1,6 +1,13 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import {
+  handleLogin,
+  handleLogout,
+  handleSession,
+  isAuthConfigured,
+  requireSession,
+} from "./auth-server";
 
 dotenv.config();
 
@@ -8,11 +15,20 @@ export const app = express();
 
 app.use(express.json({ limit: "10mb" }));
 
+// Studio lock: a single username/password pair held in deployment env vars.
+app.get("/api/session", handleSession);
+app.post("/api/login", handleLogin);
+app.post("/api/logout", handleLogout);
+
+// Everything below spends Gemini quota, so it stays behind the lock.
+app.use("/api/gemini", requireSession);
+
 // Health and default key availability check
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     hasDefaultKey: Boolean(process.env.GEMINI_API_KEY),
+    authConfigured: isAuthConfigured(),
   });
 });
 
