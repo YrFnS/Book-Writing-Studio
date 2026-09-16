@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-amiri: 'Amiri', 'Noto Naskh Arabic', serif;
+    --font-noto: 'Noto Naskh Arabic', 'Amiri', serif;
+    --font-lora: 'Lora', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Eye Comfort Palettes */
+  /* 1. Soft Paper / Gentle Light Mode (Glair-free, eye-comfortable off-white) */
+  body[data-theme='papyrus'] {
+    --bg-main: #F8F9FA;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #F1F3F5;
+    --text-primary: #1F2937;
+    --text-secondary: #4B5563;
+    --text-muted: #6B7280;
+    --border-subtle: #E5E7EB;
+    --border-strong: #D1D5DB;
+    --accent: #4F46E5;
+    --accent-text: #4338CA;
+    --accent-subtle: rgba(79, 70, 229, 0.08);
+    --accent-border: rgba(79, 70, 229, 0.25);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+
+  /* 2. Night Slate (Dark Eye Comfort) */
+  body[data-theme='slate'] {
+    --bg-main: #0F172A;
+    --bg-surface: #1E293B;
+    --bg-elevated: #334155;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --border-subtle: #334155;
+    --border-strong: #475569;
+    --accent: #6366F1;
+    --accent-text: #818CF8;
+    --accent-subtle: rgba(99, 102, 241, 0.12);
+    --accent-border: rgba(99, 102, 241, 0.3);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+
+  /* 3. Pure Day Tone (Cool Neutral Light) */
+  body[data-theme='sand'] {
+    --bg-main: #F4F4F6;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #EAEAEF;
+    --text-primary: #18181B;
+    --text-secondary: #52525B;
+    --text-muted: #71717A;
+    --border-subtle: #E4E4E7;
+    --border-strong: #D4D4D8;
+    --accent: #4F46E5;
+    --accent-text: #4338CA;
+    --accent-subtle: rgba(79, 70, 229, 0.08);
+    --accent-border: rgba(79, 70, 229, 0.25);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+}
+
+/* Custom Typography Utilities */
+.font-amiri {
+  font-family: var(--font-amiri), serif;
+}
+
+.font-noto {
+  font-family: var(--font-noto), serif;
+}
+
+.font-lora {
+  font-family: var(--font-lora), serif;
+}
+
+.font-sans-ui {
+  font-family: var(--font-sans), sans-serif;
+}
+
+/* Eye comfort background helpers */
+.bg-canvas {
+  background-color: var(--bg-main);
+}
+.bg-surface {
+  background-color: var(--bg-surface);
+}
+.bg-elevated {
+  background-color: var(--bg-elevated);
+}
+.text-main {
+  color: var(--text-primary);
+}
+.text-sub {
+  color: var(--text-secondary);
+}
+.text-dim {
+  color: var(--text-muted);
+}
+.text-accent {
+  color: var(--accent-text);
+}
+.bg-accent-subtle {
+  background-color: var(--accent-subtle);
+}
+.border-accent {
+  border-color: var(--accent-border);
+}
+.border-subtle {
+  border-color: var(--border-subtle);
+}
+.border-strong {
+  border-color: var(--border-strong);
+}
+
+/* High contrast, eye-gentle text selection */
+::selection {
+  background-color: #E0E7FF !important;
+  color: #1E1B4B !important;
+}
+body[data-theme='slate'] ::selection {
+  background-color: #3730A3 !important;
+  color: #EEF2FF !important;
+}
+
+/* Prose textarea with smooth scrolling */
+.prose-editor-textarea {
+  overflow-y: auto !important;
+  resize: none !important;
+  box-sizing: border-box;
+}
+
+/* Custom Scrollbars to avoid visual noise */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* Print Styles for pristine PDF exports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-book-content {
+    font-family: 'Amiri', 'Lora', serif !important;
+    font-size: 14pt !important;
+    line-height: 1.8 !important;
+    color: #111 !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}

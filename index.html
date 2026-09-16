@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Writing Studio</title>
+    <meta name="description" content="An eye-comfortable, bilingual (Arabic & English) studio for authors with Gemini AI assistance, multi-book hierarchy, codex, speech dictation, and free cloud backup." />
+    <meta property="og:title" content="Book Writing Studio" />
+    <meta property="og:description" content="An eye-comfortable, bilingual (Arabic & English) studio for authors with Gemini AI assistance, multi-book hierarchy, codex, speech dictation, and free cloud backup." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Lora:ital,wght@0,400..700;1,400..700&family=Noto+Naskh+Arabic:wght@400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <script>
+      // Suppress benign Vite development server WebSocket errors in sandboxed preview iframe
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        var msg = reason ? (reason.message || String(reason)) : '';
+        if (msg.includes('WebSocket') || msg.includes('websocket') || msg.includes('vite') || msg.includes('closed without opened')) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+      window.addEventListener('error', function(event) {
+        var msg = event.message || '';
+        if (msg.includes('WebSocket') || msg.includes('websocket') || msg.includes('vite') || msg.includes('closed without opened')) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+    </script>
+  </head>
+  <body class="antialiased selection:bg-indigo-100 selection:text-indigo-950 dark:selection:bg-indigo-900/60 dark:selection:text-indigo-100">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

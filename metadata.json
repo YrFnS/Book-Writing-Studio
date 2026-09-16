@@ -1,0 +1,7 @@
+{
+  "name": "Book Writing Studio",
+  "description": "An eye-comfortable, bilingual (Arabic & English) studio for authors with Gemini AI assistance, multi-book hierarchy, codex, speech dictation, and free cloud backup.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
